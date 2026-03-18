@@ -6,8 +6,8 @@ from utils.bigquery_client import get_client
 
 
 # 📁 Paths
-QUERY_PATH = "queries/vendas_agregada_todo_mes.sql"
-OUTPUT_PATH = "data/csv/sales_filial.csv"
+QUERY_PATH = "queries/vendas.sql"
+OUTPUT_PATH = "data/csv/vendas.csv"
 
 
 # 🔹 Executa SQL
