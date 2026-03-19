@@ -248,7 +248,7 @@ Para adicionar novas análises:
 
 **Responsável:** Pedro Lucas Resende  
 **GitHub:** [@pedrolucas-resende](https://github.com/pedrolucas-resende)  
-**Email:** [seu email]
+**Email:** pedrolucasresende.dev@gmail.com / pedro.siqueira@mottu.com.br
 
 ## 📄 Licença
 
