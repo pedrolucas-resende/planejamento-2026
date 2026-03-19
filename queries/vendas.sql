@@ -93,8 +93,7 @@ where
 date(atualizacaoData) = date_Trunc(date(atualizacaoData) ,month)
 and f.situacao_id in (  1490 )
 group by all
- 
- 
+  
 ), disponibilidade as (
  
 select 1

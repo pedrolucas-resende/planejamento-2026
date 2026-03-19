@@ -1,5 +1,5 @@
 SELECT 
-    LAST_DAY(DATE_ADD(DATE(atualizacaoData), INTERVAL -1 DAY)) as mes,
+    date_add(date(atualizacaoData), interval -1 day )  as mes,    
     SUM(CASE WHEN tipo_situacao = 'Venda' THEN qtd ELSE 0 END) as venda_total,
     "Realizado" as status
 FROM `dm-mottu-aluguel.exp_frota.frota_historico_agrupado`
