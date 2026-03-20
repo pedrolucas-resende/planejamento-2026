@@ -29,8 +29,7 @@ from datetime import datetime, timedelta
 INPUT_FILE = "data/csv/input_o.csv"
 OUTPUT_FILE = "data/csv/filial_produto_vendas_historico.csv"
 
-# Data máxima para histórico (backtesting)
-DATA_MAXIMA_HISTORICO = "2025-07-31"
+# Data máxima para histórico é calculada dinamicamente (7 meses atrás da data máxima dos dados)
 
 # Colunas de vendas por tipo de veículo
 VENDAS_COLUNAS = {
@@ -67,10 +66,9 @@ def load_and_clean(filepath):
 
 def filter_and_transform(df):
     """
-    Filtra dados até a data máxima e transforma para formato longo
+    Filtra dados: histórico é 7 meses atrás da data máxima, resto é para teste
+    Transforma para formato longo
     """
-    
-    print(f"\n🔄 Filtrando dados até {DATA_MAXIMA_HISTORICO}...")
     
     # Selecionar colunas necessárias
     df_selecionado = df[COLUNAS_NECESSARIAS].copy()
@@ -78,9 +76,19 @@ def filter_and_transform(df):
     # Converter data
     df_selecionado['dataValor'] = pd.to_datetime(df_selecionado['dataValor'])
     
-    # Filtrar até data máxima
-    data_max = pd.to_datetime(DATA_MAXIMA_HISTORICO)
-    df_filtrado = df_selecionado[df_selecionado['dataValor'] <= data_max].copy()
+    # Calcular data máxima e data limite (7 meses atrás)
+    data_maxima_geral = df_selecionado['dataValor'].max()
+    
+    # Subtrair 7 meses
+    data_limit = data_maxima_geral - pd.DateOffset(months=7)
+    
+    print(f"\n📅 Data máxima dos dados: {data_maxima_geral.date()}")
+    print(f"📅 Cutoff (7 meses atrás): {data_limit.date()}")
+    print(f"🔄 Filtrando histórico até {data_limit.date()}...")
+    print(f"🔄 Dados de teste de {(data_limit + pd.DateOffset(days=1)).date()} até {data_maxima_geral.date()}")
+    
+    # Filtrar até data limite
+    df_filtrado = df_selecionado[df_selecionado['dataValor'] <= data_limit].copy()
     
     print(f"✅ Dados filtrados: {len(df_filtrado)} registros")
     print(f"   Período: {df_filtrado['dataValor'].min().date()} até {df_filtrado['dataValor'].max().date()}")
@@ -119,7 +127,7 @@ def filter_and_transform(df):
     
     print(f"✅ Transformação concluída: {len(df_long)} registros")
     
-    return df_long
+    return df_long, data_limit, data_maxima_geral
 
 # ============================================================================
 # 4. ANÁLISE DE MATURIDADE DAS FILIAIS
@@ -233,7 +241,7 @@ def main():
     df = load_and_clean(INPUT_FILE)
     
     # Filtrar e transformar
-    df_transformado = filter_and_transform(df)
+    df_transformado, data_limite_historico, data_maxima_geral = filter_and_transform(df)
     
     # Analisar maturidade
     df_maturidade = calcular_maturidade_filiais(df_transformado)
@@ -254,12 +262,12 @@ def main():
     print("="*80)
     print(f"\n📌 Próximos passos:")
     print(f"   1. Usar {OUTPUT_FILE} para backtesting")
-    print(f"   2. Script #9: Testar modelos Darts (2025-08 até 2026-02)")
-    print(f"   3. Script #10: Forecasting produção (2026-03 até 2027-02)")
+    print(f"   2. Script #9: Testar modelos Darts (após {data_limite_historico.date()} até {data_maxima_geral.date()})")
+    print(f"   3. Script #10: Forecasting produção (Histórico: até {data_maxima_geral.date()})")
     
-    return df_transformado, df_maturidade
+    return df_transformado, df_maturidade, data_limite_historico, data_maxima_geral
 
 # ============================================================================
 
 if __name__ == "__main__":
-    df_resultado, df_maturidade = main()
+    df_resultado, df_maturidade, data_limite, data_maxima = main()
