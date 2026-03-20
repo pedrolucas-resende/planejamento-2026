@@ -245,7 +245,7 @@ with
       left join `dm-mottu-aluguel.exp_atendimentos.cadastro_filiais` cf on cf.lugar = t.filial
     where
       date (atualizacaoData) = DATE_TRUNC (date (atualizacaoData), month)
-      and date (atualizacaoData) >= '2025-01-02'
+AND DATE(atualizacaoData) >= DATE_SUB(CURRENT_DATE(), INTERVAL 36 MONTH)
     group by all
   ),
   intra_mes as (
