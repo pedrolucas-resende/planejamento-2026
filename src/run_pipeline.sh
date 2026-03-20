@@ -7,7 +7,7 @@ echo "🚀 Iniciando Pipeline de S&OP..."
 
 # 1. Rodar input_o.py
 echo "📥 Extraindo dados brutos (input_o.py)..."
-python3 src/input_o.py
+python3 src/utils/input_o.py
 
 # 2. Rodar scripts de análise (em paralelo ou sequência)
 echo "📊 Processando hierarquias e categorização..."
@@ -22,3 +22,5 @@ python3 src/forecast/preparar_dados_forecasting.py
 python3 src/forecast/treinar_modelo_global_darts.py
 
 echo "✅ Pipeline finalizado com sucesso! Dados prontos em data/xlsx/"
+
+python3 src/utils/gera_xlsx.py

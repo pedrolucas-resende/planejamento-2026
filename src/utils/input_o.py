@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.bigquery_client import get_client
+from bigquery_client import get_client
 
 
 # 📁 Paths
