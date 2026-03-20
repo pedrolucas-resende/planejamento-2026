@@ -107,6 +107,8 @@ def filter_and_transform(df):
     # Mapear tipos de veículos
     df_long['produto'] = df_long['tipo_original'].map(VENDAS_COLUNAS)
     df_long = df_long.drop('tipo_original', axis=1)
+
+    df_long = df_long[df_long['produto'] != 'total'].copy()
     
     # Renomear colunas
     df_long = df_long.rename(columns={
@@ -151,18 +153,18 @@ def calcular_maturidade_filiais(df):
         num_registros = len(df_filial)
         
         # Categoria de maturidade
-        if dias_operacao < 90 or num_registros < 12:
+        if dias_operacao < 2*30 or num_registros < 12:
             categoria = "Recém-aberta"
-            modelos = ['NaiveModel', 'NaiveMovingAverage']
-        elif dias_operacao < 365:
+            modelos = ["NaiveModel", "NaiveMovingAverage"]
+        elif dias_operacao < 6*30:
             categoria = "Jovem"
-            modelos = ['ExponentialSmoothing', 'Prophet']
-        elif dias_operacao < 730:
+            modelos = ["NaiveDrift", "ExponentialSmoothing"]
+        elif dias_operacao < 12*30:
             categoria = "Intermediária"
-            modelos = ['SeasonalNaiveModel', 'ExponentialSmoothing', 'Prophet', 'ARIMA']
+            modelos = ["AutoARIMA", "Theta"]
         else:
             categoria = "Madura"
-            modelos = ['ARIMA', 'Prophet', 'SeasonalNaiveModel', 'Theta', 'NBeats']
+            modelos = ['XGBModel', 'LightGBMModel', 'NBEATSModel', 'TFTModel']
         
         maturidade.append({
             'filial': filial,
