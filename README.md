@@ -34,5 +34,5 @@ Repositório dedicado à análise, categorização e previsão de vendas (locaç
 ## 📈 Performance Atual
 
 - Métrica Alvo: MAE (Mean Absolute Error)
-- Resultado: 66.57 motos (Refinado em Março/2026)
+- Resultado: 1.75 motos (Refinado em Março/2026)
 

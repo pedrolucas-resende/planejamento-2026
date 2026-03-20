@@ -1,18 +1,12 @@
 """
 Script para preparar dados para forecasting com Darts:
-Data, País, Estado, Cidade, Filial, Hierarquia_Urbana, Rank, População, Produto, Vendas
-
-Melhorias aplicadas:
-- Remoção de registros nulos (NaN)
-- Padronização de datas para o último dia do mês
-- Preenchimento de lacunas temporais (Zero-filling para meses sem venda)
-- Garantia de continuidade da série para modelos globais
+Consolidação de Hierarquia, Dados Operacionais e Alvos de Venda.
 """
 
 import pandas as pd
 import numpy as np
-from pathlib import Path
 from datetime import datetime
+import os
 
 # ============================================================================
 # 1. CONFIGURAÇÃO
@@ -21,16 +15,23 @@ from datetime import datetime
 INPUT_FILE = "data/csv/input_o.csv"
 OUTPUT_FILE = "data/csv/filial_produto_vendas_historico.csv"
 
-VENDAS_COLUNAS = {
-    "alugadas_0km": "0km",
-    "alugadas_semi": "semi",
-    "alugadas_usada": "usada"
+# Mapeamento dos alvos de previsão (Target)
+VENDAS_TARGETS = {
+    'qtd_vendas_0km': '0km',
+    'qtd_vendas_semi': 'semi',
+    'qtd_vendas_usada': 'usada'
 }
 
-COLUNAS_NECESSARIAS = [
-    'dataValor', 'pais', 'estado', 'cidade', 'filial', 
-    'hierarquia_urbana', 'populacao_cluster', 'populacao',
-    'alugadas_0km', 'alugadas_semi', 'alugadas_usada'
+# Colunas que representam o estado da operação (Past Covariates)
+COLUNAS_OPERACIONAIS = [
+    'frota_op_total', 'manutencao_total', 'pronta_total', 
+    'mec_total', 'mec_presentes', 'indisponivel_total', 'recebida_0km'
+]
+
+# Colunas geográficas e de cluster (Static Covariates)
+COLUNAS_ESTATICAS = [
+    'pais', 'estado', 'cidade', 'filial', 
+    'hierarquia_urbana', 'populacao_cluster', 'populacao'
 ]
 
 # ============================================================================
@@ -38,121 +39,121 @@ COLUNAS_NECESSARIAS = [
 # ============================================================================
 
 def load_and_clean(filepath):
-    """Carrega o arquivo e remove nulos críticos"""
+    """Carrega o arquivo e padroniza datas"""
     print(f"📁 Lendo arquivo: {filepath}")
     df = pd.read_csv(filepath, encoding='utf-8-sig')
     
-    # Remover linhas onde a filial ou data são nulas
+    # Remover linhas críticas nulas
     df = df.dropna(subset=['filial', 'dataValor'])
     
-    # Padronizar data para o último dia do mês para consistência no Darts
+    # Padronizar data para o último dia do mês (padrão Darts 'ME')
     df['dataValor'] = pd.to_datetime(df['dataValor']) + pd.offsets.MonthEnd(0)
+    
+    # Preencher NAs nas colunas operacionais com 0 (importante para o modelo)
+    df[COLUNAS_OPERACIONAIS] = df[COLUNAS_OPERACIONAIS].fillna(0)
     
     return df
 
 def ensure_full_time_series(df):
-    """Garante que todas as filiais/produtos tenham todos os meses (preenche com 0)"""
-    print("⏳ Padronizando séries temporais e preenchendo lacunas com zero...")
+    """Garante continuidade temporal para cada combinação filial/produto"""
+    print("⏳ Padronizando séries temporais e preenchendo lacunas...")
     
-    # 1. Definir o range de datas completo do dataset
     all_months = pd.date_range(start=df['data'].min(), end=df['data'].max(), freq='ME')
+    
+    # Ajuste: Removi 'populacao_cluster' da lista estática pois ela já foi renomeada para 'rank'
+    colunas_para_static = [c for c in COLUNAS_ESTATICAS if c != 'populacao_cluster'] + ['rank', 'produto']
+    
+    # Obter info estática para não perder no merge
+    static_info = df[colunas_para_static].drop_duplicates(subset=['filial', 'produto'])
 
-    # 2. Obter informações estáticas para não perdê-las no merge
-    static_info = df[['filial', 'produto', 'pais', 'estado', 'cidade', 'hierarquia_urbana', 'rank', 'populacao']].drop_duplicates(subset=['filial', 'produto'])
-
-    # 3. Criar esqueleto de todas as combinações (Data x Filial x Produto)
+    # Criar esqueleto (Data x Filial x Produto)
     from itertools import product
-    combinations = list(product(all_months, static_info['filial'].unique(), static_info['produto'].unique()))
+    combinations = list(product(all_months, df['filial'].unique(), df['produto'].unique()))
     template = pd.DataFrame(combinations, columns=['data', 'filial', 'produto'])
 
-    # 4. Trazer dados geográficos de volta para o esqueleto
+    # Merges para reconstruir o dataset completo
     template = template.merge(static_info, on=['filial', 'produto'], how='left')
-
-    # 5. Mesclar com as vendas reais
-    df_final = template.merge(df, on=['data', 'filial', 'produto', 'pais', 'estado', 'cidade', 'hierarquia_urbana', 'rank', 'populacao'], how='left')
     
-    # 6. Limpeza final dos valores nulos gerados pelo merge
+    # Merge com os dados de vendas e operacionais
+    df_final = template.merge(df, on=['data', 'filial', 'produto'] + [c for c in colunas_para_static if c != 'produto'], how='left')
+    
+    # Preenchimento de zeros
     df_final['vendas'] = df_final['vendas'].fillna(0).astype(int)
-    df_final['populacao'] = df_final['populacao'].fillna(0).astype(int)
-    
+    for col in COLUNAS_OPERACIONAIS:
+        df_final[col] = df_final[col].fillna(0)
+        
     return df_final
 
 def calcular_maturidade_filiais(df):
-    """Analisa o tempo de casa de cada filial para sugerir modelos"""
-    print("\n🔍 Analisando maturidade das filiais...")
+    """Gera metadados sobre o tempo de operação de cada filial"""
+    print("🔍 Analisando maturidade das filiais...")
     maturidade = []
     
-    # Filtrar apenas onde vendas > 0 para saber quando a filial REALMENTE começou
     df_vendas_reais = df[df['vendas'] > 0]
     
     for filial in df['filial'].unique():
         df_f = df_vendas_reais[df_vendas_reais['filial'] == filial]
         
         if df_f.empty:
-            dias_operacao, num_registros = 0, 0
+            dias_operacao = 0
             data_primeira = df['data'].min()
         else:
             data_primeira = df_f['data'].min()
             data_ultima = df_f['data'].max()
             dias_operacao = (data_ultima - data_primeira).days
-            num_registros = len(df_f['data'].unique())
         
+        # Lógica de categorização para o Caio
         if dias_operacao < 60:
-            cat, mods = "Recém-aberta", "NaiveModel, MovingAverage"
+            cat = "Recém-aberta"
         elif dias_operacao < 180:
-            cat, mods = "Jovem", "ExponentialSmoothing, Prophet"
+            cat = "Jovem"
         elif dias_operacao < 360:
-            cat, mods = "Intermediária", "AutoARIMA, Theta"
+            cat = "Intermediária"
         else:
-            cat, mods = "Madura", "XGBModel, LightGBM, NBEATS, TFT"
+            cat = "Madura"
             
         maturidade.append({
             'filial': filial, 'data_primeira': data_primeira.date(),
-            'dias_operacao': dias_operacao, 'categoria': cat, 'modelos': mods
-        })
+            'dias_operacao': dias_operacao, 'meses_operacao': dias_operacao / 30,
+           'categoria': cat})
     
     return pd.DataFrame(maturidade)
 
 # ============================================================================
-# 3. EXECUÇÃO
+# 3. EXECUÇÃO PRINCIPAL
 # ============================================================================
 
 def main():
-    # Carregar
+    # 1. Carga
     df = load_and_clean(INPUT_FILE)
     
-    # Selecionar e Filtrar (Cutoff de 7 meses para validação futura)
-    data_max = df['dataValor'].max()
-    data_limit = data_max - pd.DateOffset(months=7)
-    df_hist = df[df['dataValor'] <= data_limit].copy()
+    # 2. Unpivot (Melt)
+    id_vars = COLUNAS_ESTATICAS + COLUNAS_OPERACIONAIS + ['dataValor']
     
-    # Transformar para Long (Unpivot)
-    df_long = df_hist.melt(
-        id_vars=['dataValor', 'pais', 'estado', 'cidade', 'filial', 'hierarquia_urbana', 'populacao_cluster', 'populacao'],
-        value_vars=list(VENDAS_COLUNAS.keys()),
-        var_name='produto_raw', value_name='vendas'
+    df_long = df.melt(
+        id_vars=id_vars,
+        value_vars=list(VENDAS_TARGETS.keys()),
+        var_name='produto_raw', 
+        value_name='vendas'
     )
-    df_long['produto'] = df_long['produto_raw'].map(VENDAS_COLUNAS)
-    df_long = df_long.rename(columns={'dataValor': 'data', 'populacao_cluster': 'rank'}).drop('produto_raw', axis=1)
+    
+    # 3. Renomear ANTES de passar para a função de séries temporais
+    df_long['produto'] = df_long['produto_raw'].map(VENDAS_TARGETS)
+    df_long = df_long.rename(columns={'dataValor': 'data', 'populacao_cluster': 'rank'})
+    df_long = df_long.drop('produto_raw', axis=1)
 
-    # NOVO: Preencher meses faltantes e remover NaNs
+    # 4. Agora a função recebe os nomes já corrigidos ('data' e 'rank')
     df_long = ensure_full_time_series(df_long)
     
-    # Analisar Maturidade
+    # 5. Gerar análise de maturidade
     df_maturidade = calcular_maturidade_filiais(df_long)
     
-    # Estatísticas Rápidas
-    print(f"\n✅ Processamento concluído!")
-    print(f"📊 Registros finais: {len(df_long)}")
-    print(f"🏢 Filiais processadas: {df_long['filial'].nunique()}")
-    print(f"📅 Período: {df_long['data'].min().date()} até {df_long['data'].max().date()}")
-
-    # Exportar
+    # 6. Exportação
+    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     df_long.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
     df_maturidade.to_csv(OUTPUT_FILE.replace('.csv', '_maturidade.csv'), index=False, encoding='utf-8-sig')
     
-    print(f"\n💾 Arquivos salvos em: data/csv/")
-    return df_long
+    print(f"\n✅ Processamento concluído sem erros!")
 
 if __name__ == "__main__":
-    df_final = main()
+    main()
