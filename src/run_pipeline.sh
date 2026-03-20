@@ -24,3 +24,5 @@ python3 src/forecast/treinar_modelo_global_darts.py
 echo "✅ Pipeline finalizado com sucesso! Dados prontos em data/xlsx/"
 
 python3 src/utils/gera_xlsx.py
+
+python3 src/graphics/visualizar_forecast.py
