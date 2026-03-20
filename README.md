@@ -2,13 +2,13 @@
 
 Este repositório contém as ferramentas e scripts para a projeção de vendas de 12 meses da frota (0km, seminovas e usadas) da Mottu. O projeto integra dados do **BigQuery** e processamento em **Python** para alimentar o planejamento de demanda.
 
-## 1. Objetivo do Projeto
+## 🎯 1. Objetivo do Projeto
 
 Automatizar e padronizar a projeção de vendas anual por categoria de veículo, fornecendo subsídios para o planejamento estratégico de Sales and Operations Planning (S&OP).
 
 ---
 
-## 2. Configuração do Ambiente
+## ⚙️ 2. Configuração do Ambiente
 
 ### Requisitos Técnicos
 
@@ -37,7 +37,7 @@ gcloud auth application-default login
 
 ---
 
-## 3. Estrutura do Repositório
+## 📁 3. Estrutura do Repositório
 
 ```
 ├── src/
@@ -65,7 +65,7 @@ gcloud auth application-default login
 
 ---
 
-## 4. Fluxo de Trabalho
+## 🔄 4. Fluxo de Trabalho
 
 1. **Extração:** O script consome dados do projeto `dm-mottu-aluguel` via BigQuery utilizando as queries em `/queries`.
 
@@ -75,7 +75,7 @@ gcloud auth application-default login
 
 ---
 
-## 5. Notas de Manutenção
+## 🛠️ 5. Notas de Manutenção
 
 - Sempre que houver alteração nas queries SQL, verifique a compatibilidade com os scripts Python.
 - Mantenha o arquivo `requirements.txt` atualizado com as dependências do projeto.
@@ -83,9 +83,10 @@ gcloud auth application-default login
 
 ---
 
-## 6. Próximos Passos
+## 🚀 6. Próximos Passos
 
 - [ ] Automatizar consolidação dos dados no `overview_sales.xlsx`
+- [ ] Implementar testes unitários para os scripts de forecast
 - [ ] Documentar métricas de erro e validação de dados
 
 ---
