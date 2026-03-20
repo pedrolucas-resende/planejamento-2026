@@ -1,95 +1,33 @@
-# Forecast de Vendas S&OP (Motos 0km, Semi e Usadas)
+# Mottu S&OP Forecasting - Elite Model 🧠
 
-Este repositório contém as ferramentas e scripts para a projeção de vendas de 12 meses da frota (0km, seminovas e usadas) da Mottu. O projeto integra dados do **BigQuery** e processamento em **Python** para alimentar o planejamento de demanda.
+Repositório dedicado à análise, categorização e previsão de vendas (locação de motos) para suporte ao ciclo de S&OP. O projeto utiliza modelos de Gradient Boosting (LightGBM) e bibliotecas de séries temporais de alta performance para reduzir o erro de planejamento.
 
-## 🎯 1. Objetivo do Projeto
+## 🛠️ Stack Técnica
+- **Linguagem:** Python 3.12
+- **Data Source:** Google BigQuery (via `gcloud auth`)
+- **Modelagem:** LightGBM, Darts (Global Models)
 
-Automatizar e padronizar a projeção de vendas anual por categoria de veículo, fornecendo subsídios para o planejamento estratégico de Sales and Operations Planning (S&OP).
+## 📂 Estrutura do Projeto
+- `src/forecast/`: Core da inteligência de predição.
+    - `preparar_dados_forecasting.py`: ETL e Feature Engineering (Lags, Sazonalidade).
+    - `testar_modelos_forecasting.py`: Backtesting e validação de métricas.
+    - `treinar_modelo_global_darts.py`: Treinamento do modelo "Elite".
+- `src/`: Scripts de análise por hierarquia (População, Região, Estado).
+- `queries/`: SQLs estruturados para consumo direto do BigQuery.
+- `data/xlsx/`: Armazenamento de snapshots e visões de planejamento (ex: `overview_sales.xlsx`).
+- `zzz/`: Scripts legados e utilitários de exportação de gráficos.
 
----
+## 🚀 Como Executar
+1. **Configurar Ambiente:**
+   ```bash
+   python3.12 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   gcloud auth application-default login
+   ```
 
-## ⚙️ 2. Configuração do Ambiente
+## 📈 Performance Atual
 
-### Requisitos Técnicos
+- Métrica Alvo: MAE (Mean Absolute Error)
+- Resultado: 66.57 motos (Refinado em Março/2026)
 
-- **Python:** 3.12 (Versão recomendada para estabilidade das libs de Data Science)
-- **Google Cloud SDK (gcloud):** Instalado e configurado.
-- **Projeto BigQuery:** `dm-mottu-aluguel`
-
-### Instalação e Autenticação
-
-Siga os passos abaixo para preparar o ambiente local no macOS:
-
-```bash
-# 1. Criar o ambiente virtual
-python3.12 -m venv .venv
-
-# 2. Ativar o ambiente
-source .venv/bin/activate
-
-# 3. Instalar dependências
-pip install -r requirements.txt
-
-# 4. Autenticação Google Cloud (Obrigatório para acesso aos dados)
-# Isso configura as Application Default Credentials (ADC)
-gcloud auth application-default login
-```
-
----
-
-## 📁 3. Estrutura do Repositório
-
-```
-├── src/
-│   ├── forecast_ago_2025_fev_2026.py    # Script de projeção principal
-│   ├── input_o.py                        # Processamento de entradas específicas
-│   └── utils/                            # Utilitários de conexão (Client do BigQuery)
-├── queries/                              # Arquivos .sql com regras de negócio
-├── data/xlsx/                            # Armazena overview_sales.xlsx
-├── zzz/                                  # Arquivos legados (scripts antigos)
-└── README.md                             # Este arquivo
-```
-
-### Detalhamento
-
-- **`src/`:** Scripts de extração e modelagem de forecast.
-  - `forecast_ago_2025_fev_2026.py` – Script de projeção principal.
-  - `input_o.py` – Processamento de entradas específicas.
-  - `utils/` – Utilitários de conexão (Client do BigQuery).
-
-- **`queries/`:** Arquivos `.sql` com as regras de negócio para extração no BigQuery.
-
-- **`data/xlsx/`:** Armazena o arquivo `overview_sales.xlsx`, repositório final dos dados.
-
-- **`zzz/`:** Pasta de arquivos legados (scripts antigos e consultas descontinuadas).
-
----
-
-## 🔄 4. Fluxo de Trabalho
-
-1. **Extração:** O script consome dados do projeto `dm-mottu-aluguel` via BigQuery utilizando as queries em `/queries`.
-
-2. **Processamento:** Os arquivos em `src/` processam os dados brutos e realizam o cálculo de forecast.
-
-3. **Consolidação:** Atualmente, os resultados são gerados em arquivos intermediários e consolidados manualmente no `overview_sales.xlsx` (etapa em processo de automação).
-
----
-
-## 🛠️ 5. Notas de Manutenção
-
-- Sempre que houver alteração nas queries SQL, verifique a compatibilidade com os scripts Python.
-- Mantenha o arquivo `requirements.txt` atualizado com as dependências do projeto.
-- Consulte o arquivo `.gitignore` para garantir que credenciais e arquivos sensíveis não sejam commitados.
-
----
-
-## 🚀 6. Próximos Passos
-
-- [ ] Automatizar consolidação dos dados no `overview_sales.xlsx`
-- [ ] Implementar testes unitários para os scripts de forecast
-- [ ] Documentar métricas de erro e validação de dados
-
----
-
-**Versão:** 1.0  
-**Última atualização:** Março/2026
