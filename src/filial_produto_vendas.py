@@ -51,25 +51,28 @@ def transform_to_long_format(df):
     Transforma de formato WIDE para LONG:
     
     ANTES (wide):
-    | pais | filial | alugadas_0km | alugadas_semi | alugadas_usada | alugadas_total |
+    | dataValor | pais | filial | alugadas_0km | alugadas_semi | alugadas_usada | alugadas_total |
     
     DEPOIS (long):
-    | pais | filial | produto | vendas |
-    | Brasil | Mottu SP | 0km | 100 |
-    | Brasil | Mottu SP | semi | 50 |
-    | Brasil | Mottu SP | usada | 200 |
-    | Brasil | Mottu SP | total | 350 |
+    | data | pais | filial | produto | vendas |
+    | 2024-01-31 | Brasil | Mottu SP | 0km | 100 |
+    | 2024-01-31 | Brasil | Mottu SP | semi | 50 |
+    | 2024-01-31 | Brasil | Mottu SP | usada | 200 |
+    | 2024-01-31 | Brasil | Mottu SP | total | 350 |
     """
     
     print("\n🔄 Transformando para formato longo...")
     
     # Selecionar apenas as colunas necessárias
-    colunas_selecionadas = ['pais', 'filial'] + list(DEMANDA_COLUNAS.keys())
+    colunas_selecionadas = ['dataValor', 'pais', 'filial'] + list(DEMANDA_COLUNAS.keys())
     df_selecionado = df[colunas_selecionadas].copy()
+    
+    # Converter dataValor para datetime
+    df_selecionado['dataValor'] = pd.to_datetime(df_selecionado['dataValor'])
     
     # Unpivot (melt): transformar colunas em linhas
     df_long = df_selecionado.melt(
-        id_vars=['pais', 'filial'],
+        id_vars=['dataValor', 'pais', 'filial'],
         value_vars=list(DEMANDA_COLUNAS.keys()),
         var_name='tipo_original',
         value_name='vendas'
@@ -79,11 +82,17 @@ def transform_to_long_format(df):
     df_long['produto'] = df_long['tipo_original'].map(DEMANDA_COLUNAS)
     df_long = df_long.drop('tipo_original', axis=1)
     
+    # Renomear coluna de data
+    df_long = df_long.rename(columns={'dataValor': 'data'})
+    
     # Reordenar colunas
-    df_long = df_long[['pais', 'filial', 'produto', 'vendas']]
+    df_long = df_long[['data', 'pais', 'filial', 'produto', 'vendas']]
     
     # Converter vendas para número (remover NaN)
     df_long['vendas'] = pd.to_numeric(df_long['vendas'], errors='coerce').fillna(0)
+    
+    # Ordenar por data
+    df_long = df_long.sort_values('data').reset_index(drop=True)
     
     print(f"✅ Transformação concluída: {len(df_long)} registros")
     
@@ -101,6 +110,8 @@ def print_statistics(df_long):
     print("="*70)
     
     print(f"\n✓ Total de registros: {len(df_long)}")
+    print(f"✓ Período: {df_long['data'].min().date()} até {df_long['data'].max().date()}")
+    print(f"✓ Datas únicas: {df_long['data'].nunique()}")
     print(f"✓ Países únicos: {df_long['pais'].nunique()} → {list(df_long['pais'].unique())}")
     print(f"✓ Filiais únicas: {df_long['filial'].nunique()}")
     print(f"✓ Produtos: {list(df_long['produto'].unique())}")
