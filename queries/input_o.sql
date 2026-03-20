@@ -274,7 +274,7 @@ AND DATE(atualizacaoData) >= DATE_SUB(CURRENT_DATE(), INTERVAL 36 MONTH)
       `dm-mottu-aluguel.exp_frota.frota_atual` t
       left join `dm-mottu-aluguel.exp_atendimentos.cadastro_filiais` cf on cf.lugar = t.lugar_nome
     where
-      pais = 'Brasil'
+      terceiro = 0
     group by all
       ---- Cohort mes producao x saida da frota -
   ),

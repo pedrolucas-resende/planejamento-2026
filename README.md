@@ -26,6 +26,11 @@ Repositório dedicado à análise, categorização e previsão de vendas (locaç
    gcloud auth application-default login
    ```
 
+2. **⚙️ Fluxo de Execução**
+    ```bash
+    ./run_pipeline.sh
+    ```
+
 ## 📈 Performance Atual
 
 - Métrica Alvo: MAE (Mean Absolute Error)
