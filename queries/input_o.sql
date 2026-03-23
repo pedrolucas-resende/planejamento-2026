@@ -244,7 +244,13 @@ with
       `dm-mottu-aluguel.exp_frota.frota_historico_agrupado` t
       left join `dm-mottu-aluguel.exp_atendimentos.cadastro_filiais` cf on cf.lugar = t.filial
     where
-      date (atualizacaoData) = DATE_TRUNC (date (atualizacaoData), month)
+      (date (atualizacaoData) = DATE_TRUNC (date (atualizacaoData), month) OR
+      date(atualizacaoData) = (                                       -- último dia disponível do mês atual
+      SELECT MAX(date(atualizacaoData)) 
+      FROM `dm-mottu-aluguel.exp_frota.frota_historico_agrupado`
+      WHERE DATE_TRUNC(date(atualizacaoData), month) = DATE_TRUNC(CURRENT_DATE(), month)
+    )
+  )
 AND DATE(atualizacaoData) >= DATE_SUB(CURRENT_DATE(), INTERVAL 36 MONTH)
     group by all
   ),
