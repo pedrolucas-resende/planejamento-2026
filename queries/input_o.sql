@@ -489,3 +489,6 @@ from
   left join producao prod on prod.filial = t.filial
   and prod.mes = t.dataValor
   left join clustered cl on cl.filial = t.filial
+order by
+  dataValor desc,
+  filial;
