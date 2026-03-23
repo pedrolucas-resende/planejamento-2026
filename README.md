@@ -42,3 +42,5 @@ Repositório dedicado à análise, categorização e previsão de vendas (locaç
 ## 📊 Dashboard
 
 Visualizações interativas e relatórios consolidados para monitoramento da performance do modelo e métricas de S&OP em tempo real.
+
+[📊 Visualizar Dashboard](https://pedrolucas-resende.github.io/planejamento-2026/dashboard_forecast_mottu.html)
