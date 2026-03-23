@@ -28,6 +28,7 @@ def main():
     print(f"✅ Salvo em: {OUTPUT_PATH}")
     print(f"   Registros: {len(df):,}")
     print(f"   Colunas: {list(df.columns)}")
+    print(f"   Exemplo:\n{df.head(3)}")
 
 if __name__ == "__main__":
     main()
