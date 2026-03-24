@@ -251,7 +251,7 @@ with
       WHERE DATE_TRUNC(date(atualizacaoData), month) = DATE_TRUNC(CURRENT_DATE(), month)
     )
   )
-AND DATE(atualizacaoData) >= DATE_SUB(CURRENT_DATE(), INTERVAL 36 MONTH)
+AND DATE(atualizacaoData) >= '2025-03-31'
     group by all
   ),
   intra_mes as (
@@ -496,5 +496,5 @@ from
   and prod.mes = t.dataValor
   left join clustered cl on cl.filial = t.filial
 order by
-  dataValor desc,
+  dataValor asc,
   filial;
