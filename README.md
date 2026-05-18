@@ -1,4 +1,4 @@
-# Mottu S&OP Forecasting - Elite Model 🧠
+# Aluguel de Motos S&OP Forecasting - Elite Model 🧠
 
 Repositório dedicado à análise, categorização e previsão de vendas (locação de motos) para suporte ao ciclo de S&OP. O projeto utiliza modelos de Gradient Boosting (LightGBM) e bibliotecas de séries temporais de alta performance para reduzir o erro de planejamento.
 
